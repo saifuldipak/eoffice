@@ -15,17 +15,39 @@ class UserRole(str, Enum):
     TICKET_MANAGER = "ticket_manager"
     TICKET_UPDATER = "ticket_updater"
 
+class UserAction(str, Enum):
+    USER_ADMIN = "user_admin"
+    MANAGE_TICKET = "manage_ticket"
+    UPDATE_TICKET = "update_ticket"
+
+class RoleBase(SQLModel):
+    name: str = Field(sa_column_kwargs={"unique": True})
+    description: str
+
+class Role(RoleBase, table=True):
+    __tablename__ = "roles"  
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(sa_column_kwargs={"unique": True})
+    description: str | None = None
+
+class RolePermissions(SQLModel, table=True):
+    __tablename__ = "role_permissions" 
+    id: int | None = Field(default=None, primary_key=True)
+    role_id: int = Field(foreign_key="roles.id")  
+    permission: UserAction
+    
 class UserBase(SQLModel):
     username: str = Field(sa_column_kwargs={"unique": True})
     first_name: str
     last_name: str
     email: str = Field(sa_column_kwargs={"unique": True})
-    role: UserRole
+    role: int | None = Field(foreign_key="roles.id")
 
 class UserCreate(UserBase):
     password: str
 
 class Users(UserCreate, table=True):
+    __tablename__ = "users" 
     id: int | None = Field(default=None, primary_key=True)
     is_active: bool
     created_at: datetime
