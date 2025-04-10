@@ -4,8 +4,8 @@ import logging
 from sqlmodel import Session
 from src.dependency import get_session
 from src.auth import get_user_admin
-from src.db_queries import create_user_in_db, get_users_from_db, delete_user_from_db, update_user_in_db 
-from src.models import UserCreate, UserInfo, UserUpdate  
+from src.db_queries import create_user_in_db, get_users_from_db, delete_user_from_db, update_user_in_db, create_role_in_db
+from src.models import UserCreate, UserInfo, UserUpdate, RoleCreate, Role
 from sqlalchemy.exc import IntegrityError
 
 # Configure logger
@@ -61,5 +61,26 @@ async def update_user(username: str, user_update: UserUpdate, session: Session =
         raise HTTPException(
             status_code=400,
             detail="Update failed due to integrity constraints (e.g., duplicate username or email)"
+        )
+
+@router.post("/roles/", response_model=Role, tags=["roles"])
+async def create_role(role: RoleCreate, session: Session = Depends(get_session)):
+    """
+    Create a new role in the system.
+    
+    Args:
+        role: Role data.
+        session: Database session.
+        
+    Returns:
+        The created role.
+    """
+    try:
+        db_role = create_role_in_db(session, role)
+        return db_role
+    except IntegrityError:
+        raise HTTPException(
+            status_code=400, 
+            detail="Role with this name already exists"
         )
 
