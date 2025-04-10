@@ -22,13 +22,14 @@ class UserAction(str, Enum):
 
 class RoleBase(SQLModel):
     name: str = Field(sa_column_kwargs={"unique": True})
-    description: str
+    description: str | None = None
 
 class Role(RoleBase, table=True):
     __tablename__ = "roles"  
     id: int | None = Field(default=None, primary_key=True)
-    name: str = Field(sa_column_kwargs={"unique": True})
-    description: str | None = None
+
+class RoleCreate(RoleBase):
+    pass
 
 class RolePermissions(SQLModel, table=True):
     __tablename__ = "role_permissions" 
