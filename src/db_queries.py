@@ -1,5 +1,5 @@
 from sqlmodel import Session, select
-from src.models import Users
+from src.models import Users, Role
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
@@ -63,6 +63,30 @@ def update_user_in_db(session: Session, username: str, updated_data: dict):
         session.commit()
         session.refresh(db_user)
         return db_user
+    except IntegrityError:
+        session.rollback()
+        raise
+
+def create_role_in_db(session: Session, role_data):
+    """
+    Create a new role in the database.
+    
+    Args:
+        session (Session): The database session.
+        role_data: Pydantic model with role data.
+        
+    Returns:
+        Role: The created role object.
+    """
+    db_role = Role(
+        name=role_data.name,
+        description=role_data.description
+    )
+    session.add(db_role)
+    try:
+        session.commit()
+        session.refresh(db_role)
+        return db_role
     except IntegrityError:
         session.rollback()
         raise
