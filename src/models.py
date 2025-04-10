@@ -1,14 +1,18 @@
 import os
-from sqlmodel import SQLModel, Field, create_engine, Session
+from sqlmodel import SQLModel, Field, create_engine, Session, text
 from datetime import datetime
 from sqlmodel import create_engine
 import bcrypt
 from sqlalchemy import UniqueConstraint
 from enum import Enum
-from dotenv import load_dotenv  # Import dotenv
+from dotenv import load_dotenv, find_dotenv  # Import dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+dotenv_path = find_dotenv()
+if not dotenv_path:
+    print("Warning: .env file is missing!")
+else:
+    load_dotenv(override=True)
 
 class UserRole(str, Enum):
     USER_ADMIN = "user_admin"
@@ -34,7 +38,7 @@ class RoleCreate(RoleBase):
 class RolePermissions(SQLModel, table=True):
     __tablename__ = "role_permissions" 
     id: int | None = Field(default=None, primary_key=True)
-    role_id: int = Field(foreign_key="roles.id")  
+    role_id: int = Field(foreign_key="roles.id", ondelete="RESTRICT")     
     permission: UserAction
     
 class UserBase(SQLModel):
@@ -42,7 +46,7 @@ class UserBase(SQLModel):
     first_name: str
     last_name: str
     email: str = Field(sa_column_kwargs={"unique": True})
-    role: int | None = Field(foreign_key="roles.id")
+    role: int | None = Field(foreign_key="roles.id", ondelete="RESTRICT")
 
 class UserCreate(UserBase):
     password: str
@@ -72,8 +76,11 @@ class UserUpdate(SQLModel):
     
 def create_db_connection():
     # Load DATABASE_URL from .env file, default to sqlite if not set
-    db_url = os.getenv("DATABASE_URL", "sqlite:///./eoffice.db")
-    engine = create_engine(db_url, echo=False, connect_args={"check_same_thread": False})
+    print("DATABASE_URL:", os.getenv("DATABASE_URL"))
+    engine = create_engine(os.getenv("DATABASE_URL"), echo=False, connect_args={"check_same_thread": False})
+    with engine.connect() as connection:
+            connection.execute(text("PRAGMA foreign_keys=ON"))
+    
     return engine
 
 def recreate_tables(engine):
