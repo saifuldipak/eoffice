@@ -28,18 +28,20 @@ class RoleBase(SQLModel):
     name: str = Field(sa_column_kwargs={"unique": True})
     description: str | None = None
 
-class Role(RoleBase, table=True):
+class Roles(RoleBase, table=True):
     __tablename__ = "roles"  
     id: int | None = Field(default=None, primary_key=True)
 
 class RoleCreate(RoleBase):
     pass
 
-class RolePermissions(SQLModel, table=True):
+class RolePermissionCreate(SQLModel):
+    role_id: int = Field(foreign_key="roles.id", ondelete="RESTRICT")
+    permission: UserAction
+
+class RolePermissions(RolePermissionCreate, table=True):
     __tablename__ = "role_permissions" 
     id: int | None = Field(default=None, primary_key=True)
-    role_id: int = Field(foreign_key="roles.id", ondelete="RESTRICT")     
-    permission: UserAction
     
 class UserBase(SQLModel):
     username: str = Field(sa_column_kwargs={"unique": True})
