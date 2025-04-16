@@ -4,8 +4,8 @@ import logging
 from sqlmodel import Session
 from src.dependency import get_session
 from src.auth import get_user_admin
-from src.db_queries import create_user_in_db, get_users_from_db, delete_user_from_db, update_user_in_db, create_role_in_db
-from src.models import UserCreate, UserInfo, UserUpdate, RoleCreate, Role
+from src.db_queries import create_user_in_db, get_users_from_db, delete_user_from_db, update_user_in_db, create_role_in_db, create_role_permission_in_db
+from src.models import UserCreate, UserInfo, UserUpdate, RoleCreate, Role, RolePermissionCreate, RolePermission
 from sqlalchemy.exc import IntegrityError
 
 # Configure logger
@@ -82,5 +82,29 @@ async def create_role(role: RoleCreate, session: Session = Depends(get_session))
         raise HTTPException(
             status_code=400, 
             detail="Role with this name already exists"
+        )
+
+@router.post("/roles/permissions/", response_model=RolePermission, tags=["roles"])
+async def add_role_permission(
+    role_permission: RolePermissionCreate,
+    session: Session = Depends(get_session)
+):
+    """
+    Add a permission to a role.
+
+    Args:
+        role_permission: Data for the role permission to be added.
+        session: Database session.
+
+    Returns:
+        The created role permission.
+    """
+    try:
+        db_role_permission = create_role_permission_in_db(session, role_permission)
+        return db_role_permission
+    except IntegrityError:
+        raise HTTPException(
+            status_code=400,
+            detail="Permission already exists for this role"
         )
 
