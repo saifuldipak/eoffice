@@ -1,5 +1,5 @@
 from sqlmodel import Session, select
-from src.models import Users, Role
+from src.models import Users, Role, RolePermissions, RolePermissionCreate
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
@@ -87,6 +87,46 @@ def create_role_in_db(session: Session, role_data):
         session.commit()
         session.refresh(db_role)
         return db_role
+    except IntegrityError:
+        session.rollback()
+        raise
+
+def create_role_permission_in_db(session: Session, role_permission: RolePermissionCreate):
+    """
+    Create a new role permission in the database.
+
+    Args:
+        session (Session): The database session.
+        role_permission (RolePermissionCreate): The role permission data.
+
+    Returns:
+        RolePermission: The created role permission object.
+
+    Raises:
+        IntegrityError: If the role permission already exists.
+    """
+    # Check if the role permission already exists
+    statement = select(RolePermissions).where(
+        RolePermissions.role_id == role_permission.role_id,
+        RolePermissions.permission == role_permission.permission
+    )
+    existing_permission = session.exec(statement).first()
+
+    if existing_permission:
+        raise IntegrityError(
+            "Role permission already exists", params=None, orig=None
+        )
+
+    # Create the new role permission
+    db_role_permission = RolePermissions(
+        role_id=role_permission.role_id,
+        permission=role_permission.permission
+    )
+    session.add(db_role_permission)
+    try:
+        session.commit()
+        session.refresh(db_role_permission)
+        return db_role_permission
     except IntegrityError:
         session.rollback()
         raise
